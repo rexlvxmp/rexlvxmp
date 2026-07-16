@@ -116,16 +116,17 @@
 
   nav.pages{
     display:flex;
+    flex-wrap:wrap;
     justify-content:center;
     align-items:center;
-    gap:14px;
+    gap:clamp(8px, 2.5vw, 14px);
     margin-top:26px;
     font-family:'Kvadrug', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     font-weight:400;
-    font-size:22px;
+    font-size:clamp(15px, 5vw, 22px);
     letter-spacing:0.02em;
     text-transform:lowercase;
-  }
+}
   nav.pages .sep{ color:var(--muted); font-weight:400; }
   nav.pages button{
     background:none; border:none; color:var(--muted); font:inherit; font-family:inherit;
