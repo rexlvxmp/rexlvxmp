@@ -136,7 +136,9 @@
     background:none; border:none; color:var(--muted); font:inherit; font-family:inherit;
     cursor:pointer; padding:2px 0; transition:color 0.2s ease;
   }
-  nav.pages button:hover{ color:var(--ink); }
+  @media (hover:hover) and (pointer:fine){
+    nav.pages button:hover{ color:var(--ink); }
+  }
   nav.pages button.active{ color:var(--ink); }
 
   .page{ display:none; width:100%; justify-content:center; }
