@@ -86,12 +86,14 @@
     z-index:1;
     max-width:720px;
     margin:0 auto;
-    min-height:100vh;
+    height:100vh;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
     padding:250px 24px 60px;
     display:flex; 
     flex-direction:column; 
     align-items:center; 
-    
   }
 
 @media (max-width:600px){
