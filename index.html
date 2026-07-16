@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#000000">
+<title>rexlvxmp</title>
+<style>
+
+  @font-face{
+    font-family:'Kvadrug';
+    src:url('Kvadrug-Xtrovert-cf1.otf') format('opentype');
+    font-weight:400;
+    font-style:normal;
+    font-display:swap;
+  }
+
+  :root{
+    --ink:#f2f2ef;
+    --muted:#8a8a86;
+    --line:rgba(242,242,239,0.14);
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html, body{ height:100%; }
+
+  body{
+    background:#000;
+    color:var(--ink);
+    font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight:300;
+    min-height:100vh;
+    overflow-x:hidden;
+    position:relative;
+    /* deterrent only — not real protection, see note in chat */
+    -webkit-user-select:none;
+    user-select:none;
+  }
+
+  a{ color:inherit; text-decoration:none; }
+  ::selection{ background:var(--ink); color:#000; }
+  :focus-visible{ outline:1px solid var(--ink); outline-offset:4px; }
+
+  /* ---------- video backdrop ---------- */
+
+  .backdrop{ position:fixed; inset:0; z-index:0; background:#050505; overflow:hidden; }
+
+  .backdrop video{
+    position:absolute;
+    top:50%; left:50%;
+    min-width:100%; min-height:100%;
+    width:auto; height:auto;
+    transform:translate(-50%,-50%);
+    object-fit:cover;
+    filter:grayscale(1) contrast(1.1) brightness(0.55);
+    opacity:0.9;
+  }
+
+  /* fallback grain+blobs shown until a video src is set / while it loads */
+  .fallback{ position:absolute; inset:0; }
+  .blob{ position:absolute; border-radius:50%; filter:blur(70px); mix-blend-mode:screen; opacity:0.45; }
+  .blob.a{ width:60vw; height:60vw; background:radial-gradient(circle, #4a4a48 0%, transparent 70%); top:-10%; left:-15%; animation:drift1 26s ease-in-out infinite; }
+  .blob.b{ width:50vw; height:50vw; background:radial-gradient(circle, #2e2e2c 0%, transparent 70%); bottom:-15%; right:-10%; animation:drift2 32s ease-in-out infinite; }
+  @keyframes drift1{ 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(8vw,10vh) scale(1.15);} }
+  @keyframes drift2{ 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(-6vw,-8vh) scale(1.1);} }
+
+  .grain{
+    position:absolute; inset:-50%; width:200%; height:200%;
+    background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%25" height="100%25" filter="url(%23n)"/></svg>');
+    opacity:0.3; mix-blend-mode:overlay; animation:grain 1s steps(2) infinite;
+  }
+  @keyframes grain{ 0%{transform:translate(0,0);} 50%{transform:translate(-2%,1%);} 100%{transform:translate(1%,-2%);} }
+
+  .vignette{ position:absolute; inset:0; background:radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.82) 100%); }
+
+  @media (prefers-reduced-motion: reduce){ .blob, .grain{ animation:none; } }
+
+  /* ---------- content ---------- */
+
+  .shell{
+    position:relative;
+    z-index:1;
+    max-width:720px;
+    margin:0 auto;
+    min-height:100vh;
+    padding:250px 24px 60px;
+    display:flex; 
+    flex-direction:column; 
+    align-items:center; 
+    
+  }
+
+@media (max-width:600px){
+  .shell{ padding-top:120px; }
+}
+@media (max-height:700px){
+  .shell{ padding-top:90px; }
+}
+
+  .hero{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    margin-bottom:56px;
+  }
+
+  /* NOTE: placeholder font/treatment — swap once you pick your final look */
+  .brand{
+    font-family:'Kvadrug', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight:400;
+    font-size:clamp(44px, 9vw, 68px);
+    letter-spacing:0.04em;
+    text-transform:lowercase;
+  }
+
+  nav.pages{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:14px;
+    margin-top:26px;
+    font-family:'Kvadrug', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight:400;
+    font-size:22px;
+    letter-spacing:0.02em;
+    text-transform:lowercase;
+  }
+  nav.pages .sep{ color:var(--muted); font-weight:400; }
+  nav.pages button{
+    background:none; border:none; color:var(--muted); font:inherit; font-family:inherit;
+    cursor:pointer; padding:2px 0; transition:color 0.2s ease;
+  }
+  nav.pages button:hover{ color:var(--ink); }
+  nav.pages button.active{ color:var(--ink); }
+
+  .page{ display:none; width:100%; justify-content:center; }
+  .page.active{ display:flex; }
+
+  .window{
+    width:100%;
+    max-width:420px;
+    background:rgba(10,10,9,0.55);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:30px 26px;
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    box-shadow:0 20px 60px rgba(0,0,0,0.4);
+    animation:winIn 0.32s cubic-bezier(.2,.8,.2,1);
+  }
+
+  @keyframes winIn{
+    from{ opacity:0; transform:scale(0.94) translateY(10px); }
+    to{ opacity:1; transform:scale(1) translateY(0); }
+  }
+
+  .reveal-item{
+    opacity:1;
+  }
+
+  .window.wide{ max-width:640px; }
+  .window.social{ max-width:480px; }
+  .window.narrow{ max-width:300px; }
+
+  @media (prefers-reduced-motion: reduce){
+    .window{ animation:none; }
+  }
+
+  /* ---------- ABOUT ---------- */
+
+  .about-list{
+    font-size:18px;
+    letter-spacing:0.02em;
+    line-height:2.4;
+    text-align:center;
+  }
+  .about-list .muted{ color:var(--muted); font-size:14px; letter-spacing:0.08em; margin-right:8px; }
+
+  /* ---------- SOCIALS ---------- */
+
+  .find-title{
+    font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight:500;
+    font-size:15px;
+    letter-spacing:0.12em;
+    text-transform:lowercase;
+    color:var(--muted);
+    text-align:center;
+    margin-bottom:22px;
+  }
+
+  .icon-grid{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:20px;
+  }
+
+  .icon-tile{
+    width:26px;
+    height:26px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--ink);
+    opacity:0.72;
+    transition:opacity 0.2s ease, transform 0.2s ease;
+  }
+  .icon-tile:hover{ opacity:1; transform:translateY(-2px); }
+  .icon-tile.at{ font-size:24px; font-weight:400; line-height:1; }
+
+  /* ---------- PROJECTS ---------- */
+
+  .cat{
+    font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight:500;
+    font-size:14px;
+    letter-spacing:0.1em;
+    text-transform:lowercase;
+    color:var(--muted);
+    margin:0 0 14px;
+    padding-top:36px;
+    border-top:1px solid var(--line);
+    width:100%;
+  }
+  .cat:first-child{ border-top:none; padding-top:0; }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:12px;
+    margin-bottom:8px;
+    width:100%;
+  }
+
+  .card{
+    position:relative;
+    aspect-ratio:3/4;
+    border:1px solid var(--line);
+    border-radius:2px;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      repeating-linear-gradient(135deg, rgba(242,242,239,0.03) 0 2px, transparent 2px 10px),
+      rgba(255,255,255,0.02);
+    transition:border-color 0.2s ease;
+  }
+  .card:hover{ border-color:rgba(242,242,239,0.35); }
+  .card .ph{ font-size:12px; letter-spacing:0.08em; color:var(--muted); text-transform:lowercase; text-align:center; padding:0 12px; }
+  .card .cap{
+    position:absolute; left:0; right:0; bottom:0; padding:9px 10px;
+    font-size:13.5px; letter-spacing:0.01em;
+    background:linear-gradient(to top, rgba(0,0,0,0.55), transparent);
+  }
+  .card.wide{ grid-column:span 2; aspect-ratio:16/9; }
+
+  footer{
+    margin-top:64px;
+    font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size:10px;
+    letter-spacing:0.1em;
+    color:var(--muted);
+    text-align:center;
+  }  .sound-toggle{
+    position:fixed;
+    right:22px;
+    bottom:22px;
+    z-index:5;
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:rgba(10,10,9,0.5);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    color:var(--ink);
+    opacity:0.75;
+    transition:opacity 0.2s ease, border-color 0.2s ease;
+  }
+  .sound-toggle:hover{ opacity:1; border-color:rgba(242,242,239,0.35); }
+  .sound-toggle svg{ width:16px; height:16px; }
+  .sound-toggle .icon-off{ display:none; }
+  .sound-toggle.is-muted .icon-on{ display:none; }
+  .sound-toggle.is-muted .icon-off{ display:block; }
+</style>
+</head>
+<body>
+
+<div class="backdrop">
+  <div class="fallback">
+    <div class="blob a"></div>
+    <div class="blob b"></div>
+    <div class="grain"></div>
+  </div>
+
+  <video autoplay muted loop playsinline>
+    <source src="bg.mp4" type="video/mp4">
+  </video>
+
+  <div class="vignette"></div>
+</div>
+
+<button class="sound-toggle is-muted" id="soundToggle" title="Toggle sound" aria-label="Toggle background video sound">
+  <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 9v6h4l5 4V5L8 9H4Z"/>
+    <path d="M16.5 8.5a5 5 0 0 1 0 7"/>
+    <path d="M19 6a9 9 0 0 1 0 12"/>
+  </svg>
+  <svg class="icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 9v6h4l5 4V5L8 9H4Z"/>
+    <path d="M16 9l5 5"/>
+    <path d="M21 9l-5 5"/>
+  </svg>
+</button>
+
+<div class="shell">
+  <div class="hero">
+    <div class="brand">rexlvxmp</div>
+
+    <nav class="pages" id="pages">
+      <button data-page="about">about</button>
+      <span class="sep">|</span>
+      <button data-page="socials">socials</button>
+      <span class="sep">|</span>
+      <button data-page="projects">projects</button>
+    </nav>
+  </div>
+
+  <!-- ================= ABOUT ================= -->
+  <section class="page" id="about">
+    <div class="window narrow">
+      <div class="about-list">
+        <div class="reveal-item">18 y.o. from 🇨🇦</div>
+        <div class="reveal-item">speak 🇷🇺 🇬🇧 🇮🇹</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SOCIALS ================= -->
+  <section class="page" id="socials">
+    <div class="window social">
+      <div class="find-title reveal-item">find me on</div>
+      <div class="icon-grid">
+
+        <a class="icon-tile reveal-item" href="https://www.instagram.com/rexlvxmp/" target="_blank" rel="noopener" title="Instagram">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077"/></svg>
+        </a>
+
+        <a class="icon-tile reveal-item" href="https://t.me/rexlvxmp" target="_blank" rel="noopener" title="Telegram">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+        </a>
+
+        <a class="icon-tile reveal-item" href="https://www.tiktok.com/@rexlvxmp" target="_blank" rel="noopener" title="TikTok">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+        </a>
+
+        <a class="icon-tile reveal-item copy-tag" href="#" data-copy="rexlvxmp" title="Discord: rexlvxmp (click to copy)">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg>
+        </a>
+
+        <a class="icon-tile reveal-item" href="https://www.grailed.com/rexlvxmp" target="_blank" rel="noopener" title="Grailed">
+          <svg viewBox="0 0 16.5 16.5" width="24" height="24" fill="currentColor"><path d="m 8.56,16.123 c 2.637,0 5.118,-0.807 7.003,-2.275 V 7.09 H 8.346 v 2.46 h 4.162 v 2.797 l -0.063,0.041 c -1.116,0.728 -2.462,1.114 -3.885,1.114 -3.05,0 -5.438,-2.391 -5.438,-5.441 0,-2.912 2.44,-5.282 5.438,-5.282 1.736,0 3.313,0.524 4.453,1.474 l 1.91,-2.078 C 13.275,0.752 11.078,0 8.56,0 3.84,0 0,3.616 0,8.06 c 0,4.447 3.84,8.063 8.56,8.063 z"/></svg>
+        </a>
+
+        <a class="icon-tile reveal-item" href="https://namemc.com/profile/rexlvxmp.2" target="_blank" rel="noopener" title="NameMC">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M0 0v24h24V0Zm4.8 4.8H16V8h3.2v11.2H16V8H8v11.2H4.8V8Z"/></svg>
+        </a>
+
+        <a class="icon-tile reveal-item" href="https://steamcommunity.com/id/rexlvxmp" target="_blank" rel="noopener" title="Steam">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.5 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.253 0-2.265-1.014-2.265-2.265z"/></svg>
+        </a>
+
+        <a class="icon-tile reveal-item" href="https://github.com/rexlvxmp" target="_blank" rel="noopener" title="GitHub">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+        </a>
+
+        <a class="icon-tile at reveal-item" href="mailto:hello@example.com" title="Email">@</a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PROJECTS ================= -->
+  <section class="page" id="projects">
+    <div class="window wide">
+      <div class="cat reveal-item">sewing &amp; knitwear</div>
+      <div class="grid">
+        <div class="card wide reveal-item"><span class="ph">+ photo</span><span class="cap">longsleeve, deconstructed — 2026</span></div>
+        <div class="card reveal-item"><span class="ph">+ photo</span><span class="cap">pattern draft — 2026</span></div>
+        <div class="card reveal-item"><span class="ph">+ photo</span><span class="cap">raglan sweater — wip</span></div>
+      </div>
+
+      <div class="cat reveal-item">cad &amp; drafting</div>
+      <div class="grid">
+        <div class="card reveal-item"><span class="ph">+ photo</span><span class="cap">bracket assembly — 2026</span></div>
+        <div class="card reveal-item"><span class="ph">+ photo</span><span class="cap">enclosure, rev. 3 — 2026</span></div>
+      </div>
+
+      <div class="cat reveal-item">resale</div>
+      <div class="grid">
+        <div class="card wide reveal-item"><span class="ph">+ photo</span><span class="cap">archive pieces — grailed</span></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  const nav = document.getElementById('pages');
+  nav.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if(!btn) return;
+
+    const alreadyOpen = btn.classList.contains('active');
+
+    nav.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+    if(alreadyOpen) return; // second click just closes it
+
+    btn.classList.add('active');
+    const page = document.getElementById(btn.dataset.page);
+    page.classList.add('active');
+  });
+
+  // deterrents only — see note in chat about what this does/doesn't do
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('copy', e => e.preventDefault());
+  document.addEventListener('selectstart', e => e.preventDefault());
+  document.addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    if((e.ctrlKey || e.metaKey) && ['c','u','s'].includes(k)) e.preventDefault();
+  });
+  document.querySelectorAll('.copy-tag').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const tag = el.dataset.copy;
+      navigator.clipboard?.writeText(tag).then(() => {
+        const original = el.title;
+        el.title = 'copied!';
+        setTimeout(() => { el.title = original; }, 1200);
+      });
+    });
+  });
+
+  const startSoundOnFirstClick = () => {
+    const bgVideo = document.querySelector('.backdrop video');
+    if(bgVideo){
+      bgVideo.muted = false;
+      soundBtn.classList.remove('is-muted');
+    }
+  };
+  document.addEventListener('click', startSoundOnFirstClick, { once:true });
+
+  soundBtn.addEventListener('click', () => {
+    const bgVideo = document.querySelector('.backdrop video');
+    if(!bgVideo) return;
+    bgVideo.muted = !bgVideo.muted;
+    soundBtn.classList.toggle('is-muted', bgVideo.muted);
+  });
+</script>
+
+</body>
+</html>
