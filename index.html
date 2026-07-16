@@ -440,6 +440,7 @@
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
 
     if(alreadyOpen){
+      document.documentElement.style.overflowY = 'hidden';
       document.body.style.overflowY = 'hidden';
       return; // second click just closes it
     }
