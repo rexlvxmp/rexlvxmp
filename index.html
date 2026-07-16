@@ -448,7 +448,9 @@
     const page = document.getElementById(btn.dataset.page);
     page.classList.add('active');
 
-    document.body.style.overflowY = (btn.dataset.page === 'projects') ? 'auto' : 'hidden';
+    const scrollMode = (btn.dataset.page === 'projects') ? 'auto' : 'hidden';
+    document.documentElement.style.overflowY = scrollMode;
+    document.body.style.overflowY = scrollMode;
   });
 
   // deterrents only — see note in chat about what this does/doesn't do
